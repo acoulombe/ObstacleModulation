@@ -1,7 +1,6 @@
 import numpy as np
 import ObstacleModulation as OM
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull as ConvHull

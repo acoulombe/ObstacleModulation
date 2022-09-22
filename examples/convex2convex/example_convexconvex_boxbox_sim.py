@@ -1,7 +1,6 @@
 import numpy as np
 import ObstacleModulation as OM
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull as ConvHull
@@ -102,3 +101,7 @@ for t in range(path_length):
 
     plt.draw()
     plt.pause(dt/10)
+
+    # Check if window got closed, if it did stop the program
+    if not plt.fignum_exists(1):
+        break

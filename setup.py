@@ -11,5 +11,9 @@ setuptools.setup(
     author='Alexandre Coulombe',
     author_email='alexandre.coulombe@mail.mcgill.ca',
     packages=setuptools.find_packages(exclude=('examples', )),
-    install_requires=['numpy', 'matplotlib'],
+    install_requires=[
+        'numpy',
+        'matplotlib',
+        'scipy',
+        'Collision @ git+https://github.com/acoulombe/CollisionLibrary.git@main#egg=Collision'],
 )

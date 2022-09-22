@@ -12,7 +12,7 @@ pip3 install .
 
 For directly adding the package to your python packages. run
 ```
-pip3 install https://github.com/acoulombe/ObstacleModulation.git@main
+pip3 install git+https://github.com/acoulombe/ObstacleModulation.git@main
 ```
 
 To use the package and be able to develop with it, it is beneficial to add the package as an editable package in your python site-packages. This is done with the following commands:
