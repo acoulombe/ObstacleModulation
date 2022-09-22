@@ -82,6 +82,7 @@ class ObstacleAvoidance():
                 current system position
             vel : np.array(N, D) or None
                 current system velocity (if None, the modulation tail effects will always be active)
+                If provided, they will replace the current dynamics
             tail_effects : bool
                 whether to remove the tail effects produces by modulation
 
