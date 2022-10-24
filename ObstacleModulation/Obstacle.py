@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
+
 import numpy as np
+
 
 class Obstacle(ABC):
 
@@ -45,6 +47,23 @@ class Obstacle(ABC):
         return self.gamma_func(pos) < 1
 
     @abstractmethod
+    def sdf(self, pos) -> np.array:
+        """Signed Distance function indicating the distance between the robot and the obstacle boundary, where < 0
+        represents the penetration distance and > 0 represents the separation distance and 0 is touching the boundary
+
+        Parameters
+        ----------
+        pos : np.array(N, D)
+            2D array where N is the number of positions to query, D is the dimension of the position
+
+        Returns
+        ---------
+        np.array(N,)
+            SDF values of the queried positions
+        """
+        pass
+
+    @abstractmethod
     def gamma_func(self, pos) -> np.array:
         """Gamma function indicating the ratio of the robot to the obstacle boundary,
         where 1 represents the obstacle boundary, > 1 is outside the obstacle and < 1 is inside the obstacle
@@ -60,7 +79,7 @@ class Obstacle(ABC):
             Gamma values of the queried positions
         """
         pass
-    
+
     def get_eigenvalues(self, pos, weight=1, tail_effects=False) -> Tuple[np.array, np.array]:
         """Gets the eigenvalues of the modulation matrix for the given position of the system
 
@@ -78,14 +97,14 @@ class Obstacle(ABC):
         np.array(N,)
             eigenvalue for the normal/reference basis vector
         np.array(N,)
-            eigenvalue for the tangential basis vectors 
+            eigenvalue for the tangential basis vectors
         """
         gamma = self.gamma_func(pos)
         if tail_effects is False:
             react_gamma = (gamma  ** (1/self.reactivity))
         else:
             react_gamma = (gamma/self.repulsion_coeff  ** (1/self.reactivity))
-        
+
         lambda_r = 1 - weight / react_gamma
         lambda_r[tail_effects] = 1
 
@@ -161,7 +180,7 @@ class Obstacle(ABC):
         if vel is not None and tail_effects is True:
             tail_effects = (np.sum(E[:,:,0] * vel, axis=1) >= 0)
         D = self.get_diagonal_matrix(pos, weight=weight, tail_effects=tail_effects)
-        invE = np.linalg.inv(E)
+        invE = np.linalg.pinv(E)
         M = np.matmul(np.matmul(E, D), invE)
         return M
 

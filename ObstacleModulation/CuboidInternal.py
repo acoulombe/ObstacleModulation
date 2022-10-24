@@ -1,10 +1,11 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Rectangle
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from .Obstacle import Obstacle
+
 
 class CuboidInternal(Obstacle):
 
@@ -33,18 +34,24 @@ class CuboidInternal(Obstacle):
         self.halfDim = dimensions / 2
         self.shellDim = self.halfDim / self.safety_factor
 
-    def gamma_func(self, pos)  -> np.array:
+    def sdf(self, pos) -> np.array:
         pos_in_local_rf = np.matmul(self.orientation, (pos - self.ref_pos).T).T
 
         q = np.abs(pos_in_local_rf) - self.shellDim
         q_pos = np.copy(q)
         q_pos[q_pos < 0] = 0
-        dist = np.linalg.norm(q_pos, axis=1) + np.minimum(np.max(q, axis=1), 0)
+        return np.linalg.norm(q_pos, axis=1) + np.minimum(np.max(q, axis=1), 0)
+
+    def gamma_func(self, pos)  -> np.array:
+        pos_in_local_rf = np.matmul(self.orientation, (pos - self.ref_pos).T).T
+
+        q = np.abs(pos_in_local_rf) - self.shellDim
+        dist = self.sdf(pos)
 
         bound_dist = np.tile(self.halfDim, (q.shape[0], 1))
         boundary = np.copy(bound_dist)
         boundary[q < 0] = 0
-        
+
         # Fix internal face distances
         tmp = np.abs(pos_in_local_rf)[np.all(boundary == 0, axis=1)]
         selection = q[np.all(boundary == 0, axis=1)]
@@ -76,7 +83,7 @@ class CuboidInternal(Obstacle):
         # Get face the point is projected onto
         face_agreement = np.abs(pos_in_local_rf) / self.shellDim
         face = np.argmax(face_agreement, axis=1)
-    
+
         eigenvectors = np.tile(self.orientation, (pos.shape[0], 1, 1))
         mask = np.zeros_like(eigenvectors, bool)
         mask[np.arange(pos.shape[0]), face, :] = True
@@ -91,11 +98,11 @@ class CuboidInternal(Obstacle):
         if self.ref_pos.shape[0] == 2:
             anchor = self.ref_pos - (self.orientation.T).dot(self.dimensions)/2
             rectangle = Rectangle(anchor, self.dimensions[0], self.dimensions[1], 180 / np.pi * np.arctan2(self.orientation[0,1], self.orientation[0,0]), color=color, fill=False)
-            
+
             dim_outline = self.dimensions / self.safety_factor
             anchor_outline = self.ref_pos - (self.orientation.T).dot(dim_outline)/2
             outline = Rectangle(anchor_outline, dim_outline[0], dim_outline[1],  180 / np.pi * np.arctan2(self.orientation[0,1], self.orientation[0,0]), color='k', fill=False, linestyle='--')
-            
+
             ax.add_patch(rectangle)
             ax.add_patch(outline)
 

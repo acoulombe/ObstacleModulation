@@ -1,12 +1,14 @@
-import numpy as np
+from typing import Tuple
+
+import Collision
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Polygon
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull as ConvHull
-from typing import Tuple
 
 from .Obstacle import Obstacle
-import Collision
+
 
 class ConvexConvex(Obstacle):
 
@@ -36,6 +38,38 @@ class ConvexConvex(Obstacle):
         self.orientation = orientation
         self.vertices = vertices
 
+    def sdf(self, body_ref, body)  -> np.array:
+        """Signed Distance function indicating the distance of the robot body to the obstacle boundary,
+        where 0 represents the obstacle boundary, > 0 is the separating distance with the obstacle and
+        < 0 is the penetration distance with the obstacle
+
+        Parameters
+        ----------
+        body_ref : np.array(D,)
+            reference position of the queried body
+        body : np.array(M, D)
+            2D array where M is the number of vertices in the body, D is the dimension of space
+
+        Returns
+        ---------
+        float
+            SDF value
+        """
+        body_in_local_rf = np.matmul(self.orientation, (body - self.ref_pos).T).T
+
+        # Get Face point closest to body
+        if(self.ref_pos.shape[0] == 2):
+            sd, D, cache = Collision.signedDistance2d(body_in_local_rf, self.vertices * self.safety_factor)
+            P1 = cache.A[0]
+            P2 = cache.A[0] + D
+        elif(self.ref_pos.shape[0] == 3):
+            sd, D, cache = Collision.signedDistance(body_in_local_rf, self.vertices * self.safety_factor)
+            P1, P2 = Collision.closestPoints(D, cache)
+        else:
+            raise NotImplementedError("Only Dimensions 2 and 3 are supported")
+
+        return sd
+
     def gamma_func(self, body_ref, body)  -> np.array:
         """Gamma function indicating the ratio of the robot body to the obstacle boundary,
         where 1 represents the obstacle boundary, > 1 is outside the obstacle and < 1 is inside the obstacle
@@ -64,7 +98,7 @@ class ConvexConvex(Obstacle):
             P1, P2 = Collision.closestPoints(D, cache)
         else:
             raise NotImplementedError("Only Dimensions 2 and 3 are supported")
-        
+
         gamma = (sd + np.linalg.norm(P1 - body_ref) + + np.linalg.norm(P2)) / (np.linalg.norm(P1 - body_ref) + np.linalg.norm(P2))
 
         return gamma
@@ -88,14 +122,14 @@ class ConvexConvex(Obstacle):
         np.array(N,)
             eigenvalue for the normal/reference basis vector
         np.array(N,)
-            eigenvalue for the tangential basis vectors 
+            eigenvalue for the tangential basis vectors
         """
         gamma = self.gamma_func(body_ref, body)
         if tail_effects is False:
             react_gamma = (gamma  ** (1/self.reactivity))
         else:
             react_gamma = (gamma/self.repulsion_coeff  ** (1/self.reactivity))
-        
+
         lambda_r = 1 - weight / react_gamma
         if tail_effects:
             lambda_r = 1
@@ -219,7 +253,7 @@ class ConvexConvex(Obstacle):
                     e = getOrthogonal3d(D)
                 else:
                     e = getOrthogonal3d(n)
-            
+
         E[0,:] = n
         E[1:,:] = e
         E = E.T
@@ -261,10 +295,10 @@ class ConvexConvex(Obstacle):
         if self.ref_pos.shape[0] == 2:
             points = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos
             rectangle = Polygon(points, color=color)
-            
+
             outline_points = (self.orientation.T).dot(self.vertices.T * self.safety_factor).T + self.ref_pos
             outline = Polygon(outline_points, color='k', fill=False, linestyle='--')
-            
+
             ax.add_patch(rectangle)
             ax.add_patch(outline)
 

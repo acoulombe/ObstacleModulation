@@ -1,12 +1,13 @@
-import numpy as np
+import Collision
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Polygon
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull as ConvHull
 
 from .Obstacle import Obstacle
-import Collision
+
 
 class ConvexHull(Obstacle):
 
@@ -36,7 +37,7 @@ class ConvexHull(Obstacle):
         self.orientation = orientation
         self.vertices = vertices
 
-    def gamma_func(self, pos)  -> np.array:
+    def sdf(self, pos) -> np.array:
         pos_in_local_rf = np.matmul(self.orientation, (pos - self.ref_pos).T).T
 
         # Get Face point closest to body
@@ -51,12 +52,35 @@ class ConvexHull(Obstacle):
                 P1, P2 = Collision.closestPoints(D, cache)
             else:
                 raise NotImplementedError("Only Dimensions 2 and 3 are supported")
-            
-            dist = (sd + np.linalg.norm(P2)) / np.linalg.norm(P2)
-            queried_dist.append(dist)
-    
+
+            queried_dist.append(sd)
+
         # Get Gamma values
-        gammas = np.array(queried_dist)
+        distances = np.array(queried_dist)
+
+        return distances
+
+    def gamma_func(self, pos)  -> np.array:
+        pos_in_local_rf = np.matmul(self.orientation, (pos - self.ref_pos).T).T
+
+        # Get Face point closest to body
+        queried_gamma = []
+        for i in range(0, len(pos_in_local_rf)):
+            if(self.ref_pos.shape[0] == 2):
+                sd, D, cache = Collision.signedDistance2d(pos_in_local_rf[i,:].reshape(-1,2), self.vertices * self.safety_factor)
+                P1 = cache.A[0]
+                P2 = cache.A[0] + D
+            elif(self.ref_pos.shape[0] == 3):
+                sd, D, cache = Collision.signedDistance(pos_in_local_rf[i,:].reshape(-1,3), self.vertices * self.safety_factor)
+                P1, P2 = Collision.closestPoints(D, cache)
+            else:
+                raise NotImplementedError("Only Dimensions 2 and 3 are supported")
+
+            g = (sd + np.linalg.norm(P2)) / np.linalg.norm(P2)
+            queried_gamma.append(g)
+
+        # Get Gamma values
+        gammas = np.array(queried_gamma)
 
         return gammas
 
@@ -132,7 +156,7 @@ class ConvexHull(Obstacle):
                         e = getOrthogonal3d(D)
                     else:
                         e = getOrthogonal3d(n[i])
-            
+
             E[i,0] = n[i,:]
             E[i,1:] = e
             E[i] = E[i].T
@@ -146,10 +170,10 @@ class ConvexHull(Obstacle):
         if self.ref_pos.shape[0] == 2:
             points = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos
             rectangle = Polygon(points, color=color)
-            
+
             outline_points = (self.orientation.T).dot(self.vertices.T * self.safety_factor).T + self.ref_pos
             outline = Polygon(outline_points, color='k', fill=False, linestyle='--')
-            
+
             ax.add_patch(rectangle)
             ax.add_patch(outline)
 

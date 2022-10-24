@@ -1,6 +1,8 @@
-from .Obstacle import Obstacle
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+from .Obstacle import Obstacle
+
 
 class ObstacleAvoidance():
 
@@ -24,7 +26,7 @@ class ObstacleAvoidance():
         ----------
             obs : ObstacleModulation.Obstacle.Obstacle
                 Obstacle to add
-        
+
         Raises
         ------
             TypeError
@@ -64,8 +66,37 @@ class ObstacleAvoidance():
 
         return in_collision
 
-    def get_gamma(self, pos) -> np.array:
+    def get_sdf(self, pos) -> np.array:
+        """Queries the given positions to get the signed distance to nearest obstacle
+
+        Parameters
+        ----------
+        pos : np.array(N, D)
+            2D array where N is the number of positions to query, D is the dimension of the position
+
+        Returns
+        ---------
+        np.array(N,)
+            SDF value of the queried positions
         """
+        sd = np.full(pos.shape[0], float("inf"))
+        for obs in self.obstacle_list:
+            sd = np.minimum(sd, obs.sdf(pos))
+
+        return sd
+
+    def get_gamma(self, pos) -> np.array:
+        """Queries the given positions to get the gamma function value to nearest obstacle
+
+        Parameters
+        ----------
+        pos : np.array(N, D)
+            2D array where N is the number of positions to query, D is the dimension of the position
+
+        Returns
+        ---------
+        np.array(N,)
+            gamma value of the queried positions
         """
         gamma = np.full(pos.shape[0], float("inf"))
         for obs in self.obstacle_list:
@@ -91,7 +122,7 @@ class ObstacleAvoidance():
             ValueError : exception
                 Thrown when the robot motion for the state is not provided either from the velocity argument or the system
                 dynamics through `set_system_dynamics`.
-        
+
         Returns
         -------
             np.array
@@ -109,7 +140,7 @@ class ObstacleAvoidance():
         #         if i != k:
         #             weight = weight * (obstacle_gammas[i] - 1)
         #     product_weights.append(weight)
-        
+
         # weights = []
         # denom = np.sum(product_weights, axis=0)
         # for k in range(len(obstacle_gammas)):
@@ -123,7 +154,7 @@ class ObstacleAvoidance():
                 if i != k:
                     w = w * (obstacle_gammas[i] - 1) / ((obstacle_gammas[k] - 1) + (obstacle_gammas[i] - 1))
             weights.append(w)
-        
+
         # Get Modulation of each obstacle
         modulations = []
         for i in range(len(self.obstacle_list)):
@@ -133,7 +164,7 @@ class ObstacleAvoidance():
         M = np.eye(pos.shape[-1])
         for mod in modulations:
             M = np.matmul(M, mod)
-        
+
         # Modulate system
         if vel is not None:
             dyn = vel.reshape(-1, pos.shape[-1], 1)
@@ -141,10 +172,10 @@ class ObstacleAvoidance():
             dyn = self.dynamics(pos).reshape(-1, pos.shape[-1], 1)
         else:
             raise ValueError(f"Robot Motion is undefined:\nProvided velocity {vel}\nProvided system dynamics {self.dynamics}")
-        
+
         mod_dyn = np.matmul(M, dyn).reshape(-1, pos.shape[-1])
         is_zero = np.where(np.all(np.isclose(mod_dyn, 0), axis=1))
-        flag = np.any(np.logical_or(np.all(np.isclose(mod_dyn, 0), axis=1), np.isclose(obstacle_gammas, 1))) 
+        flag = np.any(np.logical_or(np.all(np.isclose(mod_dyn, 0), axis=1), np.isclose(obstacle_gammas, 1)))
         if flag:
             dyn[is_zero] = np.random.random(dyn.shape)[is_zero]
             mod_dyn = np.matmul(M, dyn).reshape(-1, pos.shape[-1])
@@ -165,6 +196,6 @@ class ObstacleAvoidance():
         """
         for i in range(len(self.obstacle_list)):
             self.obstacle_list[i].plot_obstacle(ax, color[i%len(color)])
-        
+
         if show:
             plt.show()

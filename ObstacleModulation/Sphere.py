@@ -1,7 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.mplot3d import axes3d
+
 from .Obstacle import Obstacle
+
 
 class Sphere(Obstacle):
 
@@ -28,8 +30,12 @@ class Sphere(Obstacle):
         super().__init__(reference_point, safety_factor=safety_factor, reactivity=reactivity, repulsion_coeff=repulsion_coeff)
         self.radius = radius
 
+    def sdf(self, pos) -> np.array:
+        return np.linalg.norm(pos - self.ref_pos, axis=1) / self.safety_factor
+
+
     def gamma_func(self, pos)  -> np.array:
-        dist = np.linalg.norm(pos - self.ref_pos, axis=1) / self.safety_factor
+        dist = self.sdf(pos)
         return dist / self.radius
 
     def get_basis_matrix(self, pos)  -> np.array:
@@ -41,7 +47,7 @@ class Sphere(Obstacle):
         n = np.zeros(r.shape)
         n[mask] = r[mask] / r_norm[mask].reshape(-1,1)
 
-        # Get tangential vectors of surface     
+        # Get tangential vectors of surface
         e = np.zeros((pos.shape[0], pos.shape[1], self.ref_pos.shape[0]-1))
         if self.ref_pos.shape[0] == 2: # 2 dimensional aka circle
             # use circular coordinates to get tangential vector to surface
@@ -67,7 +73,7 @@ class Sphere(Obstacle):
             # last unit vector value is 0
 
         else:
-            raise NotImplementedError(f"Only defined for 2 and 3 dimensions, which are circle and sphere. Dimension provided {self.ref_pos.shape[0]}")     
+            raise NotImplementedError(f"Only defined for 2 and 3 dimensions, which are circle and sphere. Dimension provided {self.ref_pos.shape[0]}")
 
         E[:,:,0] = n
         E[:,:,1:] = e
