@@ -99,7 +99,7 @@ class ConvexConvex(Obstacle):
         else:
             raise NotImplementedError("Only Dimensions 2 and 3 are supported")
 
-        gamma = (sd + np.linalg.norm(P1 - body_ref) + + np.linalg.norm(P2)) / (np.linalg.norm(P1 - body_ref) + np.linalg.norm(P2))
+        gamma = (np.linalg.norm(body_ref - self.ref_pos)) / (np.linalg.norm(body_ref -  self.ref_pos) - sd)
 
         return gamma
 
@@ -294,13 +294,17 @@ class ConvexConvex(Obstacle):
     def plot_obstacle(self, ax, color='g', show=False) -> None:
         if self.ref_pos.shape[0] == 2:
             points = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos
-            rectangle = Polygon(points, color=color)
+            hull = ConvHull(points)
+            # draw the polygons of the convex hull
+            plt.scatter(points[:,0], points[:,1])
+            for simplex in hull.simplices:
+                plt.plot(points[simplex, 0], points[simplex, 1], f'{color}-')
 
             outline_points = (self.orientation.T).dot(self.vertices.T * self.safety_factor).T + self.ref_pos
-            outline = Polygon(outline_points, color='k', fill=False, linestyle='--')
-
-            ax.add_patch(rectangle)
-            ax.add_patch(outline)
+            hull = ConvHull(outline_points)
+            # draw the polygons of the convex hull
+            for simplex in hull.simplices:
+                plt.plot(outline_points[simplex, 0], outline_points[simplex, 1], 'k--')
 
         elif self.ref_pos.shape[0] == 3:
             vertices = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos

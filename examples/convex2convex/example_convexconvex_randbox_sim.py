@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import ConvexHull as ConvHull
@@ -83,7 +83,7 @@ for t in range(path_length):
     dyn = dynamics(pos, goal).reshape(-1, 3, 1)
     mod_dyn = np.matmul(modulation, dyn).reshape(-1, 3)
     gammas = box.gamma_func(pos, pos + vertices)
-    flag = np.any(np.logical_and(np.all(np.isclose(mod_dyn, 0, atol=1e-2)), np.isclose(gammas, 1, atol=1e-3))) 
+    flag = np.any(np.logical_and(np.all(np.isclose(mod_dyn, 0, atol=1e-2)), np.isclose(gammas, 1, atol=1e-3)))
     if flag:
         dyn = np.random.random(dyn.shape)
         mod_dyn = np.matmul(modulation, dyn).reshape(-1, 3)
