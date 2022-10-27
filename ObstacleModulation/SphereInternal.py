@@ -28,10 +28,10 @@ class SphereInternal(Obstacle):
         self.radius = radius
 
     def sdf(self, pos) -> np.array:
-        return np.linalg.norm(pos - self.ref_pos, axis=1) * self.safety_factor
+        return (np.linalg.norm(pos - self.ref_pos, axis=1) - self.radius) * self.safety_factor
 
     def gamma_func(self, pos)  -> np.array:
-        dist = self.sdf(pos)
+        dist = np.linalg.norm(pos - self.ref_pos, axis=1) / self.safety_factor
         return self.radius / dist
 
     def get_basis_matrix(self, pos)  -> np.array:

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
+from scipy.signal import convolve2d
 from sklearn.cluster import DBSCAN
 
 # Obstacle
@@ -113,6 +114,41 @@ in_collision = obs_avoid.check_collision(pos).reshape(cell_count, cell_count)
 dist = obs_avoid.get_sdf(pos).reshape(cell_count, cell_count)
 gammas = obs_avoid.get_gamma(pos).reshape(cell_count, cell_count)
 
+# Get Normal Basis Vector
+filt_dx = np.zeros((3,3))
+filt_dx[:,0] = 1
+filt_dx[:,-1] = -1
+
+filt_dy = np.zeros((3,3))
+filt_dy[0,:] = 1
+filt_dy[-1,:] = -1
+
+grad_x = convolve2d(dist, filt_dx, mode='same')
+grad_y = convolve2d(dist, filt_dy, mode='same')
+
+# Tangents to Obstacle Surface
+def gram_schmidt(X):
+    Q, R = np.linalg.qr(X)
+    return Q
+
+def get_initial_basis(v):
+    S = np.zeros((v.shape[0], v.shape[1], v.shape[1]))
+    S[:,:,0] = v
+    for i in range(1, v.shape[1]):
+        a = np.zeros(v.shape)
+        a[np.isclose(v[:,0], 0), 0] = 1
+        a[~np.isclose(v[:,0], 0), 0] = -v[~np.isclose(v[:,0], 0),i] / v[~np.isclose(v[:,0], 0),0]
+        a[:,i] = 1
+        S[:,:,i] = a
+
+    return S
+
+grad = np.array([grad_x.flatten(), grad_y.flatten()]).T
+S = get_initial_basis(grad)
+basis = gram_schmidt(S)
+c = np.sum(basis[:,0] * grad, axis=1)
+basis[c < 0, :] *= -1
+
 # Scan for local minima
 W_size = 5
 extrema = np.zeros(dist.shape)
@@ -142,5 +178,56 @@ ref_points = np.array(ref_points)
 
 ax.scatter(minima[:,0], minima[:,1], color="purple", s=10)
 ax.scatter(ref_points[:,0], ref_points[:,1], color="orange", s=20)
+ax.set_title("SDF Reference Point Discovery")
+
+# Reconstruct Gamma Function Values
+fig, ax = plt.subplots(1,2)
+gamma_reconstruct = np.zeros(pos.shape[0])
+dist_pos = dist.flatten()
+for i in range(pos.shape[0]):
+    dist_closest_ref = np.min(np.linalg.norm(pos[i] - ref_points, axis=1))
+    gamma_reconstruct[i] = dist_closest_ref / (dist_closest_ref - dist_pos[i])
+
+gamma_reconstruct = gamma_reconstruct.reshape(cell_count, cell_count)
+
+CT = ax[0].contourf(x, y, gamma_reconstruct, 50, cmap='coolwarm')
+ax[0].contour(x, y, gamma_reconstruct, 50, colors='k')
+fig.colorbar(CT)
+obs_avoid.plot_environment(ax[0])
+ax[0].set_xlim(xmin=-dim/2, xmax=dim/2)
+ax[0].set_ylim(ymin=-dim/2, ymax=dim/2)
+ax[0].set_title("Gamma Function Reconstruction")
+
+# True Gamma Function
+CT = ax[1].contourf(x, y, gammas, 50, cmap='coolwarm')
+ax[1].contour(x, y, gammas, 50, colors='k')
+fig.colorbar(CT)
+obs_avoid.plot_environment(ax[1])
+ax[1].set_xlim(xmin=-dim/2, xmax=dim/2)
+ax[1].set_ylim(ymin=-dim/2, ymax=dim/2)
+ax[1].set_title("Gamma Function Baseline")
+
+
+fig, ax = plt.subplots()
+gamma_reconstruct = gamma_reconstruct.flatten()
+dyn = np.zeros(pos.shape)
+for i in range(pos.shape[0]):
+    lambda_r = 1 - 1 / gamma_reconstruct[i]
+    lambda_e = 1 + 1 / gamma_reconstruct[i]
+    D = np.diag([lambda_r, lambda_e])
+    E = basis[i]
+    # ref_idx = np.argmin(np.linalg.norm(pos[i] - ref_points, axis=1))
+    # if not np.isclose(np.linalg.norm(pos[i] - ref_points[ref_idx]), 0):
+    #     E[0,:] = (pos[i] - ref_points[ref_idx]) / np.linalg.norm(pos[i] - ref_points[ref_idx])
+
+    M = np.linalg.pinv(E) @ D @ E
+    dyn[i] = M @ -pos[i]
+
+pos = pos.reshape(cell_count, cell_count, 2)
+dyn = dyn.reshape(cell_count, cell_count, 2)
+
+ax.streamplot(pos[:,:,0], pos[:,:,1], dyn[:,:,0], dyn[:,:,1], density=5, color='b')
+obs_avoid.plot_environment(ax)
+ax.scatter(0,0,color='r',s=10)
 
 plt.show()
