@@ -42,7 +42,7 @@ dt = 1e-2
 path_length = 10000
 
 # Get Starting points
-pos = [10, 6]
+pos = [10, 6.1]
 
 # Plot the trajectory
 plt.ion()
@@ -60,9 +60,9 @@ ax.add_patch(rectangle)
 for t in range(path_length):
     rectangle.remove()
 
-    modulation = box.get_modulation_matrix(pos, pos + vertices)
-    dyn = dynamics(pos, goal).reshape(-1, 2, 1)
-    mod_dyn = np.matmul(modulation, dyn).reshape(-1, 2)
+    dyn = dynamics(pos, goal)
+    modulation = box.get_modulation_matrix(pos, pos + vertices, dyn, tail_effects=True)
+    mod_dyn = np.matmul(modulation, dyn.reshape(-1, 2, 1)).reshape(-1, 2)
     gammas = box.gamma_func(pos, pos + vertices)
     dist = box.sdf(pos, pos + vertices)
 
@@ -71,9 +71,6 @@ for t in range(path_length):
         dyn = np.random.random(dyn.shape)
         mod_dyn = np.matmul(modulation, dyn).reshape(-1, 2)
     pos = pos + mod_dyn * dt
-
-    # print(f"Gamma: {gammas}", end='\r')
-    print(f"Dist: {dist}", end='\r')
 
     if np.all(np.isclose(dyn, 0, atol=1e-1)):
         break

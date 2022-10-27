@@ -1,5 +1,3 @@
-from math import gamma
-
 import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM

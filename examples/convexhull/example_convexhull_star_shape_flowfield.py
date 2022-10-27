@@ -1,11 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
-import matplotlib.pyplot as plt
-
-# Obstacle
-import numpy as np
-import ObstacleModulation as OM
-import matplotlib.pyplot as plt
 
 # Obstacle
 theta = 45 * np.pi/180
