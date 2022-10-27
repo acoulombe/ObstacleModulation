@@ -4,7 +4,7 @@ import ObstacleModulation as OM
 from scipy.signal import convolve2d
 
 # Obstacle
-env = 0
+env = 1
 if env == 0:
     vertices = np.array([
         [1.5,1.5],
@@ -90,6 +90,28 @@ elif env == 1:
     obs_avoid.add_obstacle(circle3)
     obs_avoid.add_obstacle(circle4)
     obs_avoid.set_system_dynamics(dynamics)
+
+# Make Environment Grid
+dim = 20
+cell_count = 501
+cell_size = dim / (cell_count - 1)
+cell_mid_idx = cell_count // 2
+
+def location_to_idx(x):
+    return np.round(x / cell_size) + cell_mid_idx
+
+x = np.linspace(-dim/2, dim/2, cell_count)
+y = np.linspace(-dim/2, dim/2, cell_count)
+x, y = np.meshgrid(x, y)
+x_f = x.flatten()
+y_f = y.flatten()
+
+# Get Modulations
+pos = np.vstack((x_f,y_f)).T
+
+in_collision = obs_avoid.check_collision(pos).reshape(cell_count, cell_count)
+dist = obs_avoid.get_sdf(pos).reshape(cell_count, cell_count)
+gammas = obs_avoid.get_gamma(pos).reshape(cell_count, cell_count)
 
 # Get Normal Basis Vector
 filt_dx = np.zeros((3,3))

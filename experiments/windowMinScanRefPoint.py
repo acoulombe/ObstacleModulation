@@ -4,7 +4,7 @@ import ObstacleModulation as OM
 from sklearn.cluster import DBSCAN
 
 # Obstacle
-env = 0
+env = 1
 if env == 0:
     vertices = np.array([
         [1.5,1.5],
