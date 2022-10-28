@@ -159,8 +159,8 @@ class ConvexConvex(Obstacle):
             diagonal matrix from the eigenvalues taken from the distance of the system to the obstacle
         """
         lambda_r, lambda_e = self.get_eigenvalues(body_ref, body, weight=weight, tail_effects=tail_effects)
-        D = np.zeros((body_ref.shape[1], body_ref.shape[1]))
-        for idx in range(body_ref.shape[1]):
+        D = np.zeros((body.shape[1], body.shape[1]))
+        for idx in range(body.shape[1]):
             if idx == 0:
                 D[idx, idx] = lambda_r
             else:
@@ -287,7 +287,7 @@ class ConvexConvex(Obstacle):
         if vel is not None and tail_effects is True:
             tail_effects = (np.sum(E[:,0] * vel, axis=1) >= 0)
         D = self.get_diagonal_matrix(body_ref, body, weight=weight, tail_effects=tail_effects)
-        invE = np.linalg.inv(E)
+        invE = np.linalg.pinv(E)
         M = np.matmul(np.matmul(E, D), invE)
         return M
 
