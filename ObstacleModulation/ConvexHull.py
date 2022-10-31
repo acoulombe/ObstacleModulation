@@ -64,6 +64,7 @@ class ConvexHull(Obstacle):
         pos_in_local_rf = np.matmul(self.orientation, (pos - self.ref_pos).T).T
 
         # Get Face point closest to body
+        norm = np.linalg.norm(pos - self.ref_pos, axis=1)
         queried_gamma = []
         for i in range(0, len(pos_in_local_rf)):
             if(self.ref_pos.shape[0] == 2):
@@ -76,7 +77,7 @@ class ConvexHull(Obstacle):
             else:
                 raise NotImplementedError("Only Dimensions 2 and 3 are supported")
 
-            g = (sd + np.linalg.norm(P2)) / np.linalg.norm(P2)
+            g = norm[i] / (norm[i] - sd)
             queried_gamma.append(g)
 
         # Get Gamma values
