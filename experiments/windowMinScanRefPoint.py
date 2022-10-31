@@ -81,15 +81,15 @@ elif env == 1:
         return v
 
     obs_avoid = OM.ObstacleAvoidance()
-    obs_avoid.add_obstacle(box1)
-    obs_avoid.add_obstacle(box2)
-    obs_avoid.add_obstacle(box3)
-    obs_avoid.add_obstacle(box4)
+    # obs_avoid.add_obstacle(box1)
+    # obs_avoid.add_obstacle(box2)
+    # obs_avoid.add_obstacle(box3)
+    # obs_avoid.add_obstacle(box4)
     obs_avoid.add_obstacle(box5)
-    obs_avoid.add_obstacle(circle1)
-    obs_avoid.add_obstacle(circle2)
-    obs_avoid.add_obstacle(circle3)
-    obs_avoid.add_obstacle(circle4)
+    # obs_avoid.add_obstacle(circle1)
+    # obs_avoid.add_obstacle(circle2)
+    # obs_avoid.add_obstacle(circle3)
+    # obs_avoid.add_obstacle(circle4)
     obs_avoid.set_system_dynamics(dynamics)
 
 # Make Environment Grid
@@ -211,23 +211,42 @@ ax[1].set_title("Gamma Function Baseline")
 fig, ax = plt.subplots()
 gamma_reconstruct = gamma_reconstruct.flatten()
 dyn = np.zeros(pos.shape)
+Ms = np.zeros((pos.shape[0], pos.shape[1], pos.shape[1]))
+Es = np.zeros((pos.shape[0], pos.shape[1], pos.shape[1]))
+
 for i in range(pos.shape[0]):
     lambda_r = 1 - 1 / gamma_reconstruct[i]
     lambda_e = 1 + 1 / gamma_reconstruct[i]
     D = np.diag([lambda_r, lambda_e])
     E = basis[i]
-    # ref_idx = np.argmin(np.linalg.norm(pos[i] - ref_points, axis=1))
-    # if not np.isclose(np.linalg.norm(pos[i] - ref_points[ref_idx]), 0):
-    #     E[0,:] = (pos[i] - ref_points[ref_idx]) / np.linalg.norm(pos[i] - ref_points[ref_idx])
+    ref_idx = np.argmin(np.linalg.norm(pos[i] - ref_points, axis=1))
+    if not np.isclose(np.linalg.norm(pos[i] - ref_points[ref_idx]), 0):
+        E[:,0] = (pos[i] - ref_points[ref_idx]) / np.linalg.norm(pos[i] - ref_points[ref_idx])
 
-    M = np.linalg.pinv(E) @ D @ E
+    M = E @ D @ np.linalg.pinv(E)
     dyn[i] = M @ -pos[i]
 
+    Ms[i,:,:] = M
+    Es[i,:,:] = E
+
+pos_cp = np.copy(pos)
 pos = pos.reshape(cell_count, cell_count, 2)
 dyn = dyn.reshape(cell_count, cell_count, 2)
 
 ax.streamplot(pos[:,:,0], pos[:,:,1], dyn[:,:,0], dyn[:,:,1], density=5, color='b')
 obs_avoid.plot_environment(ax)
-ax.scatter(0,0,color='r',s=10)
+ax.scatter(0,0,color='r',s=50)
+
+# fig, ax = plt.subplots(1,2)
+# idx = np.argwhere(np.array(range(0, cell_count**2)) % 345 == 0)
+# ax[0].set_title("Modulation Frame")
+# ax[0].quiver(pos_cp[idx,0], pos_cp[idx,1], Ms[idx,0,0], Ms[idx,1,0], color="b")
+# ax[0].quiver(pos_cp[idx,0], pos_cp[idx,1], Ms[idx,0,1], Ms[idx,1,1], color="g")
+
+# ax[1].set_title("Basis Frame")
+# ax[1].quiver(pos_cp[idx,0], pos_cp[idx,1], Es[idx,0,0], Es[idx,1,0], color="b")
+# ax[1].quiver(pos_cp[idx,0], pos_cp[idx,1], Es[idx,0,1], Es[idx,1,1], color="g")
+# obs_avoid.plot_environment(ax[0])
+# obs_avoid.plot_environment(ax[1])
 
 plt.show()

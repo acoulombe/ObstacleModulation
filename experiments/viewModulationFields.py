@@ -4,7 +4,7 @@ import ObstacleModulation as OM
 from matplotlib import scale
 
 # Obstacle
-env = 0
+env = 1
 if env == 0:
     vertices = np.array([
         [1.5,1.5],
@@ -104,11 +104,11 @@ y_f = y.flatten()
 # Get Modulations
 pos = np.vstack((x_f,y_f)).T
 
-M = octagon.get_modulation_matrix(pos)
-E = octagon.get_basis_matrix(pos)
-D = octagon.get_diagonal_matrix(pos)
-gammas = octagon.gamma_func(pos).reshape(cell_count, cell_count)
-dist = octagon.sdf(pos).reshape(cell_count, cell_count)
+M = box5.get_modulation_matrix(pos)
+E = box5.get_basis_matrix(pos)
+D = box5.get_diagonal_matrix(pos)
+gammas = box5.gamma_func(pos).reshape(cell_count, cell_count)
+dist = box5.sdf(pos).reshape(cell_count, cell_count)
 
 fig, ax = plt.subplots(2, 3)
 
@@ -144,11 +144,11 @@ ax[1,2].set_title("")
 
 
 # Plot Obstacles in each subplot
-octagon.plot_obstacle(ax[0,0])
-octagon.plot_obstacle(ax[0,1])
-octagon.plot_obstacle(ax[0,2])
-octagon.plot_obstacle(ax[1,0])
-octagon.plot_obstacle(ax[1,1])
-octagon.plot_obstacle(ax[1,2])
+box5.plot_obstacle(ax[0,0])
+box5.plot_obstacle(ax[0,1])
+box5.plot_obstacle(ax[0,2])
+box5.plot_obstacle(ax[1,0])
+box5.plot_obstacle(ax[1,1])
+box5.plot_obstacle(ax[1,2])
 
 plt.show()
