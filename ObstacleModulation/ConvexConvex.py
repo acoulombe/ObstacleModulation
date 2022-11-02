@@ -296,12 +296,12 @@ class ConvexConvex(Obstacle):
             points = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos
             hull = ConvHull(points)
             # draw the polygons of the convex hull
-            plt.fill(points[hull.vertices,0], points[hull.vertices,1], color=color)
+            ax.fill(points[hull.vertices,0], points[hull.vertices,1], color=color)
 
             outline_points = (self.orientation.T).dot(self.vertices.T * self.safety_factor).T + self.ref_pos
             hull = ConvHull(outline_points)
             # draw the polygons of the convex hull
-            plt.fill(outline_points[hull.vertices,0], outline_points[hull.vertices,1], 'k--', alpha=0.2)
+            ax.fill(outline_points[hull.vertices,0], outline_points[hull.vertices,1], 'k--', alpha=0.2)
 
         elif self.ref_pos.shape[0] == 3:
             vertices = (self.orientation.T).dot(self.vertices.T).T + self.ref_pos

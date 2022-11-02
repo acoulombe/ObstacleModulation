@@ -4,7 +4,7 @@ import ObstacleModulation as OM
 
 # Make Environment Grid
 dim = 20
-cell_count = 151
+cell_count = 51
 cell_size = dim / (cell_count - 1)
 cell_mid_idx = cell_count // 2
 
@@ -28,7 +28,14 @@ vertices = np.array([
 ])
 
 # Random Convex hull
-rand_vertices = (np.random.random((num_vertices,2)) - 0.5) * 4
+# rand_vertices = (np.random.random((num_vertices,2)) - 0.5) * 4
+rand_vertices = np.array([
+    [1.5,1.5],
+    [-1.5,1],
+    [-1.5,-1],
+    [1.5,-1.5],
+    [2.5,0],
+])
 obs = OM.ConvexConvex(np.array([5, 3]), rand_vertices, np.eye(2), safety_factor=1.2, reactivity=1)
 
 # Dynamics
@@ -39,7 +46,7 @@ def dynamics(pos, goal):
 dist = np.zeros(pos.shape[0])
 theta = np.linspace(-np.pi, np.pi, cell_count)
 
-occupied = np.zeros((cell_count, cell_count, cell_count))
+sdf = np.zeros((cell_count, cell_count, cell_count))
 
 for j in range(theta.shape[0]):
     for i in range(pos.shape[0]):
@@ -52,17 +59,8 @@ for j in range(theta.shape[0]):
         dist[i] = obs.sdf(pos[i], pos[i]+body)
 
     dist_2d = dist.reshape((cell_count, cell_count))
-    occupied[j] = dist_2d < 0
+    sdf[j] = dist_2d
 
-    # fig, ax = plt.subplots()
+import pickle
 
-    # CT = ax.contourf(x, y, dist_2d, 50, cmap='coolwarm')
-    # ax.contour(x, y, dist_2d, 50, colors='k')
-    # fig.colorbar(CT)
-    # obs.plot_obstacle(ax)
-    # plt.show()
-
-
-ax = plt.figure().add_subplot(projection='3d')
-ax.voxels(occupied, edgecolor='k')
-plt.show()
+pickle.dump([sdf, dim, cell_count, vertices, obs], open("rotational_experiment_data.p", "wb"))
