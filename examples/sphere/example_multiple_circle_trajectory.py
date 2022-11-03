@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
-import matplotlib.pyplot as plt
 
 # Obstacle
 circle1 = OM.Sphere(np.array([3, 2]), 1, safety_factor=1.2, reactivity=1)
@@ -36,7 +36,7 @@ dt = 1e-2
 
 traj = [pos]
 for t in range(path_length):
-    mod_dyn = obs_avoid.get_action(pos, dynamics(pos))
+    mod_dyn = obs_avoid.get_action(pos, vel=dynamics(pos))
     pos = pos + mod_dyn * dt
     traj.append(pos)
 

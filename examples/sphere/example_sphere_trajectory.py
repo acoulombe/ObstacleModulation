@@ -1,8 +1,6 @@
-from operator import is_
-from cv2 import split
+import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
-import matplotlib.pyplot as plt
 
 # Obstacle
 s = OM.Sphere(np.array([3, 0, 0]), 1, safety_factor=1.5)
@@ -40,7 +38,7 @@ for t in range(path_length):
     mod_dyn = np.matmul(modulation, dyn).reshape(-1, 3)
     is_zero = np.where(np.all(np.isclose(mod_dyn, 0), axis=1))
     gammas = s.gamma_func(pos)
-    flag = np.any(np.logical_or(np.all(np.isclose(mod_dyn, 0), axis=1), np.isclose(gammas, 1))) 
+    flag = np.any(np.logical_or(np.all(np.isclose(mod_dyn, 0), axis=1), np.isclose(gammas, 1)))
     if flag:
         dyn[is_zero] = np.random.random(dyn.shape)[is_zero]
         mod_dyn = np.matmul(modulation, dyn).reshape(-1, 3)

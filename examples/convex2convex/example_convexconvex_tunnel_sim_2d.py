@@ -4,7 +4,7 @@ import ObstacleModulation as OM
 from matplotlib.patches import Polygon
 
 # Obstacle
-theta = 90 * np.pi/180
+theta = 0 * np.pi/180
 num_vertices = 15
 
 R = np.array([
@@ -69,29 +69,8 @@ body = pos + (R @ vertices.T).T
 rectangle = Polygon(body, color='b')
 ax.add_patch(rectangle)
 
-def sdf(pos, theta, shape):
-    R_new = np.array([
-        [np.cos(theta), np.sin(theta)],
-        [-np.sin(theta), np.cos(theta)],
-    ])
-    new_points = (R_new @ shape.T).T + pos
-    sd = obs_avoid.get_sdf(pos, new_points)
-    return sd
-
-alpha = 0.01
-h = 0.01
-new_theta = theta
 for t in range(path_length):
     rectangle.remove()
-
-    sd_p = sdf(pos, new_theta + h/2, vertices)[0]
-    sd_n = sdf(pos, new_theta - h/2, vertices)[0]
-    new_theta = new_theta + alpha * (sd_p - sd_n) / h
-
-    R = np.array([
-        [np.cos(new_theta), np.sin(new_theta)],
-        [-np.sin(new_theta), np.cos(new_theta)],
-    ])
 
     dyn = dynamics(pos, goal)
     body = pos + (R @ vertices.T).T

@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import ObstacleModulation as OM
-import matplotlib.pyplot as plt
 
 # Obstacle
 R = np.eye(2)
@@ -39,7 +39,7 @@ pos = np.vstack((x_f,y_f)).T
 in_collision = obs_avoid.check_collision(pos)
 pos_valide = pos[~in_collision]
 
-mod_dyn = obs_avoid.get_action(pos_valide, dynamics(pos_valide))
+mod_dyn = obs_avoid.get_action(pos_valide, vel=dynamics(pos_valide))
 
 tmp = np.zeros(pos.shape)
 tmp[~in_collision] = mod_dyn.reshape(-1, 2)

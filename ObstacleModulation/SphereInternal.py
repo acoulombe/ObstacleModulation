@@ -31,7 +31,7 @@ class SphereInternal(Obstacle):
         return (np.linalg.norm(pos - self.ref_pos, axis=1) - self.radius) * self.safety_factor
 
     def gamma_func(self, pos)  -> np.array:
-        dist = np.linalg.norm(pos - self.ref_pos, axis=1) / self.safety_factor
+        dist = np.linalg.norm(pos - self.ref_pos, axis=1) * self.safety_factor
         return self.radius / dist
 
     def get_basis_matrix(self, pos)  -> np.array:
