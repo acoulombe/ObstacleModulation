@@ -6,16 +6,9 @@ from .Obstacle import Obstacle
 
 class ObstacleAvoidance():
 
-    def __init__(self, tail_effects=True) -> None:
+    def __init__(self) -> None:
         """Initializes Obstacle Avoidance
-
-        Parameters
-        ----------
-            tail_effects : bool
-                boolean that removes (False) or keeps (True) the effects of the obstacle
-                modulation after the system passes the obstacle.
         """
-        self.tail_effects = tail_effects
         self.obstacle_list = []
         self.dynamics = None
 
@@ -47,13 +40,15 @@ class ObstacleAvoidance():
         """
         self.dynamics = dyn
 
-    def check_collision(self, pos) -> np.array:
+    def check_collision(self, pos, body=None) -> np.array:
         """Queries the  given positions to verify if they are in collision
 
         Parameters
         ----------
         pos : np.array(N, D)
             2D array where N is the number of positions to query, D is the dimension of the position
+        body : np.array(M, D)
+            2D array where M is the number of vertices in the body, D is the dimension of space
 
         Returns
         ---------
@@ -62,17 +57,22 @@ class ObstacleAvoidance():
         """
         in_collision = np.zeros(pos.shape[0], dtype=bool)
         for obs in self.obstacle_list:
-            in_collision |= obs.check_collision(pos)
+            if body is not None:
+                in_collision |= obs.check_collision(pos, body)
+            else:
+                in_collision |= obs.check_collision(pos)
 
         return in_collision
 
-    def get_sdf(self, pos) -> np.array:
+    def get_sdf(self, pos, body=None) -> np.array:
         """Queries the given positions to get the signed distance to nearest obstacle
 
         Parameters
         ----------
         pos : np.array(N, D)
             2D array where N is the number of positions to query, D is the dimension of the position
+        body : np.array(M, D)
+            2D array where M is the number of vertices in the body, D is the dimension of space
 
         Returns
         ---------
@@ -81,17 +81,22 @@ class ObstacleAvoidance():
         """
         sd = np.full(pos.shape[0], float("inf"))
         for obs in self.obstacle_list:
-            sd = np.minimum(sd, obs.sdf(pos))
+            if body is not None:
+                sd = np.minimum(sd, obs.sdf(pos, body))
+            else:
+                sd = np.minimum(sd, obs.sdf(pos))
 
         return sd
 
-    def get_gamma(self, pos) -> np.array:
+    def get_gamma(self, pos, body=None) -> np.array:
         """Queries the given positions to get the gamma function value to nearest obstacle
 
         Parameters
         ----------
         pos : np.array(N, D)
             2D array where N is the number of positions to query, D is the dimension of the position
+        body : np.array(M, D)
+            2D array where M is the number of vertices in the body, D is the dimension of space
 
         Returns
         ---------
@@ -100,17 +105,22 @@ class ObstacleAvoidance():
         """
         gamma = np.full(pos.shape[0], float("inf"))
         for obs in self.obstacle_list:
-            gamma = np.minimum(gamma, obs.gamma_func(pos))
+            if body is not None:
+                gamma = np.minimum(gamma, obs.gamma_func(pos, body))
+            else:
+                gamma = np.minimum(gamma, obs.gamma_func(pos))
 
         return gamma
 
-    def get_action(self, pos, vel=None, tail_effects=False) -> np.array:
+    def get_action(self, pos, body=None, vel=None, tail_effects=False) -> np.array:
         """Gets the velocity for the system based on the current state of the system
 
         Parameters
         ----------
             pos : np.array(N, D)
                 current system position
+            body : np.array(M, D)
+                2D array where M is the number of vertices in the body, D is the dimension of space
             vel : np.array(N, D) or None
                 current system velocity (if None, the modulation tail effects will always be active)
                 If provided, they will replace the current dynamics
@@ -131,7 +141,10 @@ class ObstacleAvoidance():
         # Get all obstacle gammas for modulation weighting
         obstacle_gammas = []
         for obs in self.obstacle_list:
-            obstacle_gammas.append(obs.gamma_func(pos))
+            if body is not None:
+                obstacle_gammas.append(obs.gamma_func(pos, body))
+            else:
+                obstacle_gammas.append(obs.gamma_func(pos))
 
         # product_weights = []
         # for k in range(len(obstacle_gammas)):
@@ -152,14 +165,17 @@ class ObstacleAvoidance():
             w = 1
             for i in range(len(obstacle_gammas)):
                 if i != k:
-                    w = w * (obstacle_gammas[i] - 1) / ((obstacle_gammas[k] - 1) + (obstacle_gammas[i] - 1))
+                    w = w * abs(obstacle_gammas[i] - 1) / (abs(obstacle_gammas[k] - 1) + abs(obstacle_gammas[i] - 1))
             weights.append(w)
 
         # Get Modulation of each obstacle
         modulations = []
         for i in range(len(self.obstacle_list)):
             obs = self.obstacle_list[i]
-            modulations.append(obs.get_modulation_matrix(pos, vel=vel, weight=weights[i], tail_effects=tail_effects))
+            if body is not None:
+                modulations.append(obs.get_modulation_matrix(pos, body, vel=vel, weight=weights[i], tail_effects=tail_effects))
+            else:
+                modulations.append(obs.get_modulation_matrix(pos, vel=vel, weight=weights[i], tail_effects=tail_effects))
 
         M = np.eye(pos.shape[-1])
         for mod in modulations:

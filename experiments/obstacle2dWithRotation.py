@@ -36,7 +36,16 @@ rand_vertices = np.array([
     [1.5,-1.5],
     [2.5,0],
 ])
-obs = OM.ConvexConvex(np.array([5, 3]), rand_vertices, np.eye(2), safety_factor=1.2, reactivity=1)
+obs = OM.ConvexConvex(np.array([5, 3]), rand_vertices, np.eye(2), safety_factor=1, reactivity=1)
+obs2 = OM.ConvexConvex(np.array([5, -3]), rand_vertices, np.eye(2), safety_factor=1, reactivity=1)
+
+obs_avoid = OM.ObstacleAvoidance()
+obs_avoid.add_obstacle(obs)
+obs_avoid.add_obstacle(obs2)
+
+fig, ax = plt.subplots()
+obs_avoid.plot_environment(ax)
+plt.show()
 
 # Dynamics
 def dynamics(pos, goal):
@@ -56,11 +65,11 @@ for j in range(theta.shape[0]):
         ])
         body = (R @ vertices.T).T
 
-        dist[i] = obs.sdf(pos[i], pos[i]+body)
+        dist[i] = obs_avoid.get_sdf(pos[i].reshape(1,-1), pos[i]+body)
 
     dist_2d = dist.reshape((cell_count, cell_count))
     sdf[j] = dist_2d
 
 import pickle
 
-pickle.dump([sdf, dim, cell_count, vertices, obs], open("rotational_experiment_data.p", "wb"))
+pickle.dump([sdf, dim, cell_count, vertices, obs_avoid], open("rotational_experiment_data.p", "wb"))

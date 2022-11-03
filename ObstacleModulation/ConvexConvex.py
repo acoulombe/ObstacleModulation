@@ -38,6 +38,23 @@ class ConvexConvex(Obstacle):
         self.orientation = orientation
         self.vertices = vertices
 
+    def check_collision(self, body_ref, body) -> np.array:
+        """Queries the  given positions to verify if they are in collision
+
+        Parameters
+        ----------
+        body_ref : np.array(D,)
+            reference position of the queried body
+        body : np.array(M, D)
+            2D array where M is the number of vertices in the body, D is the dimension of space
+
+        Returns
+        ---------
+        np.array(N,)
+            boolean value of the queried positions (true = in collision, false = no collision)
+        """
+        return self.gamma_func(body_ref, body) < 1
+
     def sdf(self, body_ref, body)  -> np.array:
         """Signed Distance function indicating the distance of the robot body to the obstacle boundary,
         where 0 represents the obstacle boundary, > 0 is the separating distance with the obstacle and
@@ -60,11 +77,8 @@ class ConvexConvex(Obstacle):
         # Get Face point closest to body
         if(self.ref_pos.shape[0] == 2):
             sd, D, cache = Collision.signedDistance2d(body_in_local_rf, self.vertices * self.safety_factor)
-            P1 = cache.A[0]
-            P2 = cache.A[0] + D
         elif(self.ref_pos.shape[0] == 3):
             sd, D, cache = Collision.signedDistance(body_in_local_rf, self.vertices * self.safety_factor)
-            P1, P2 = Collision.closestPoints(D, cache)
         else:
             raise NotImplementedError("Only Dimensions 2 and 3 are supported")
 
@@ -91,11 +105,8 @@ class ConvexConvex(Obstacle):
         # Get Face point closest to body
         if(self.ref_pos.shape[0] == 2):
             sd, D, cache = Collision.signedDistance2d(body_in_local_rf, self.vertices * self.safety_factor)
-            P1 = cache.A[0]
-            P2 = cache.A[0] + D
         elif(self.ref_pos.shape[0] == 3):
             sd, D, cache = Collision.signedDistance(body_in_local_rf, self.vertices * self.safety_factor)
-            P1, P2 = Collision.closestPoints(D, cache)
         else:
             raise NotImplementedError("Only Dimensions 2 and 3 are supported")
 
